@@ -4,7 +4,7 @@
   <p align="center">⚡️📌 Update a pinned gist to contain the latest activity of a user</p>
 </p>
 
-<p align="center"><a href="https://github.com/JasonEtco/activity-box"><img alt="GitHub Actions status" src="https://github.com/JasonEtco/activity-box/workflows/Node%20CI/badge.svg"> <a href="https://codecov.io/gh/JasonEtco/activity-box/"><img src="https://badgen.now.sh/codecov/c/github/JasonEtco/activity-box" alt="Codecov"></a></p>
+<p align="center"><a href="https://github.com/dxnter/activity-box"><img alt="GitHub Actions status" src="https://github.com/dxnter/activity-box/workflows/Node%20CI/badge.svg"></p>
 
 ---
 
@@ -19,7 +19,7 @@
 
 ### Project setup
 
-1. [Create a template repository](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) by clicking [here](https://github.com/JasonEtco/activity-box/generate). Alternatively, you can click the _Use this template_ button:
+1. [Create a template repository](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) by clicking [here](https://github.com/dxnter/activity-box/generate). Alternatively, you can click the _Use this template_ button:
 
 | <img alt="Screenshot of the GitHub repository UI, with the Use this template button highlighted" src="assets/use-this-template.png" width="600" /> |
 | --- |
@@ -41,14 +41,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: JasonEtco/activity-box@master
+      - uses: actions/checkout@v4
+      - uses: dxnter/activity-box@master
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_USERNAME: JasonEtco
+          GH_USERNAME: dxnter
           GIST_ID: 123abc
 ```
 
