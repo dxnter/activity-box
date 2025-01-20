@@ -10,7 +10,7 @@
 
 ## Setup
 
-**activity-box** is a GitHub Action that is designed to work using the [`schedule`](https://developer.github.com/actions/managing-workflows/creating-and-cancelling-a-workflow/#scheduling-a-workflow) event.
+**activity-box** is a [forked GitHub Action](https://github.com/JasonEtco/activity-box) that is designed to work using the [`schedule`](https://developer.github.com/actions/managing-workflows/creating-and-cancelling-a-workflow/#scheduling-a-workflow) event.
 
 ### Prep work
 
