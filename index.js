@@ -3,24 +3,24 @@ import 'dotenv/config';
 import { Toolkit } from 'actions-toolkit';
 import { GistBox, MAX_LENGTH, MAX_LINES } from 'gist-box';
 
-const capitalize = (string_) =>
-  string_.slice(0, 1).toUpperCase() + string_.slice(1);
+const capitalize = (text = '') =>
+  text.length > 0 ? text[0].toUpperCase() + text.slice(1) : text;
 
-const truncate = (string_) =>
-  string_.length <= MAX_LENGTH
-    ? string_
-    : string_.slice(0, MAX_LENGTH - 3) + '...';
+const truncate = (text = '') =>
+  text.length <= MAX_LENGTH ? text : text.slice(0, MAX_LENGTH - 3) + '...';
 
 const serializers = {
   IssueCommentEvent: (item) => {
     const issueNumber = item.payload?.issue?.number ?? 'Unknown';
     const repoName = item.repo?.name ?? 'Unknown Repository';
+
     return `💬 Commented on #${issueNumber} in ${repoName}`;
   },
   IssuesEvent: (item) => {
     const issueNumber = item.payload?.issue?.number ?? 'Unknown';
     const repoName = item.repo?.name ?? 'Unknown Repository';
     const action = capitalize(item.payload?.action ?? '');
+
     return `🚩 ${action} issue #${issueNumber} in ${repoName}`;
   },
   PullRequestEvent: (item) => {
@@ -33,6 +33,7 @@ const serializers = {
       : action === 'Opened'
         ? '🔀 Opened'
         : `❌ ${action}`;
+
     return `${prefix} PR #${prNumber} in ${repoName}`;
   },
 };
@@ -41,22 +42,40 @@ Toolkit.run(
   async (tools) => {
     const { GIST_ID, GH_USERNAME, GH_PAT } = process.env;
 
-    tools.log.debug(`Fetching activity for ${GH_USERNAME}`);
-    const response = await tools.github.activity.listPublicEventsForUser({
-      username: GH_USERNAME,
-      per_page: 100,
-    });
+    if (!GIST_ID || !GH_USERNAME || !GH_PAT) {
+      return tools.exit.failure(
+        new Error('Missing one or more required environment variables.'),
+      );
+    }
 
-    const events = response.data || [];
+    let events;
+    try {
+      tools.log.debug(`Fetching activity for ${GH_USERNAME}`);
 
-    tools.log.debug(`Found ${events.length} events for ${GH_USERNAME}`);
+      const response = await tools.github.activity.listPublicEventsForUser({
+        username: GH_USERNAME,
+        per_page: 100,
+      });
 
-    const content = events
+      events = response.data || [];
+
+      tools.log.debug(`Found ${events.length} events for ${GH_USERNAME}`);
+    } catch (fetchError) {
+      tools.log.debug('Failed to fetch user activity');
+
+      return tools.exit.failure(fetchError);
+    }
+
+    let content = events
       .filter((event) => serializers[event.type])
       .slice(0, MAX_LINES)
-      .map((item) => serializers[item.type](item))
-      .map((entry) => truncate(entry))
+      .map((event) => serializers[event.type](event))
+      .map((line) => truncate(line))
       .join('\n');
+
+    if (!content) {
+      content = 'No recent activity found.';
+    }
 
     const box = new GistBox({ id: GIST_ID, token: GH_PAT });
 
@@ -66,13 +85,14 @@ Toolkit.run(
       await box.update({ content });
 
       tools.exit.success('Gist updated successfully!');
-    } catch (error) {
+    } catch (updateError) {
       tools.log.debug('Failed to update the Gist');
-      tools.exit.failure(error);
+
+      tools.exit.failure(updateError);
     }
   },
   {
-    event: 'schedule',
+    event: ['schedule', 'workflow_dispatch'],
     secrets: ['GITHUB_TOKEN', 'GH_PAT', 'GH_USERNAME', 'GIST_ID'],
   },
 );

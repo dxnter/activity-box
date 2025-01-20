@@ -36,22 +36,17 @@ const events = [
 ];
 
 describe('activity-box', () => {
-  let action, tools;
+  let runAction, tools;
 
   beforeEach(() => {
     GistBox.prototype.update = jest.fn();
 
-    Toolkit.run = (function_) => {
-      action = function_;
+    Toolkit.run = (actionFunction) => {
+      runAction = actionFunction;
     };
 
     // eslint-disable-next-line unicorn/prefer-module
     require('..');
-
-    nock('https://api.github.com')
-      // Get the user's recent activity
-      .get('/users/clippy/events/public?per_page=100')
-      .reply(200, events);
 
     tools = new Toolkit({
       logger: {
@@ -69,19 +64,38 @@ describe('activity-box', () => {
     };
   });
 
-  it('updates the Gist with the expected string', async () => {
-    await action(tools);
+  it('updates the Gist with the expected string when events exist', async () => {
+    nock('https://api.github.com')
+      .get('/users/clippy/events/public?per_page=100')
+      .reply(200, events);
+
+    await runAction(tools);
     expect(GistBox.prototype.update).toHaveBeenCalled();
     expect(GistBox.prototype.update.mock.calls[0][0]).toMatchSnapshot();
   });
 
   it('handles failure to update the Gist', async () => {
+    nock('https://api.github.com')
+      .get('/users/clippy/events/public?per_page=100')
+      .reply(200, events);
+
     GistBox.prototype.update.mockImplementationOnce(() => {
       throw new Error('404');
     });
 
-    await action(tools);
+    await runAction(tools);
     expect(tools.exit.failure).toHaveBeenCalled();
     expect(tools.exit.failure.mock.calls).toMatchSnapshot();
+  });
+
+  it('updates the Gist with fallback message if no events are found', async () => {
+    nock('https://api.github.com')
+      .get('/users/clippy/events/public?per_page=100')
+      .reply(200, []);
+
+    await runAction(tools);
+
+    expect(GistBox.prototype.update).toHaveBeenCalled();
+    expect(GistBox.prototype.update.mock.calls[0][0]).toMatchSnapshot();
   });
 });

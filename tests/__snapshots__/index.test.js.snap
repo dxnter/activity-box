@@ -8,7 +8,13 @@ exports[`activity-box handles failure to update the Gist 1`] = `
 ]
 `;
 
-exports[`activity-box updates the Gist with the expected string 1`] = `
+exports[`activity-box updates the Gist with fallback message if no events are found 1`] = `
+{
+  "content": "No recent activity found.",
+}
+`;
+
+exports[`activity-box updates the Gist with the expected string when events exist 1`] = `
 {
   "content": "🚩 Opened issue #1 in clippy/take-over-github
 💬 Commented on #1 in clippy/take-over-github
