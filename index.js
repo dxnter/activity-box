@@ -9,6 +9,60 @@ const capitalize = (text = '') =>
 const truncate = (text = '') =>
   text.length <= MAX_LENGTH ? text : text.slice(0, MAX_LENGTH - 3) + '...';
 
+const retryableErrorCodes = new Set([
+  'ECONNABORTED',
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+]);
+
+const sleep = (milliseconds) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+
+const isRetryableFetchError = (error) => {
+  if (retryableErrorCodes.has(error.cause?.code)) {
+    return true;
+  }
+
+  if ([408, 409, 429].includes(error.status) || error.status >= 500) {
+    return true;
+  }
+
+  return /premature close|socket hang up|network error/i.test(
+    error.message ?? '',
+  );
+};
+
+const fetchPublicEvents = async ({ github, username, log }) => {
+  const retryDelayMs = Number(process.env.ACTIVITY_BOX_RETRY_DELAY_MS ?? 1000);
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await github.activity.listPublicEventsForUser({
+        username,
+        per_page: 100,
+      });
+
+      return response.data || [];
+    } catch (error) {
+      if (attempt === maxAttempts || !isRetryableFetchError(error)) {
+        throw error;
+      }
+
+      log.debug(
+        `Retrying activity fetch for ${username} after transient error (${attempt}/${maxAttempts})`,
+      );
+
+      if (retryDelayMs > 0) {
+        await sleep(retryDelayMs);
+      }
+    }
+  }
+};
+
 const serializers = {
   IssueCommentEvent: (item) => {
     const issueNumber = item.payload?.issue?.number ?? 'Unknown';
@@ -52,12 +106,11 @@ Toolkit.run(
     try {
       tools.log.debug(`Fetching activity for ${GH_USERNAME}`);
 
-      const response = await tools.github.activity.listPublicEventsForUser({
+      events = await fetchPublicEvents({
+        github: tools.github,
         username: GH_USERNAME,
-        per_page: 100,
+        log: tools.log,
       });
-
-      events = response.data || [];
 
       tools.log.debug(`Found ${events.length} events for ${GH_USERNAME}`);
     } catch (fetchError) {

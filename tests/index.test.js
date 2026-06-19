@@ -39,6 +39,8 @@ describe('activity-box', () => {
   let runAction, tools;
 
   beforeEach(() => {
+    delete process.env.ACTIVITY_BOX_RETRY_DELAY_MS;
+
     GistBox.prototype.update = jest.fn();
 
     Toolkit.run = (actionFunction) => {
@@ -72,6 +74,24 @@ describe('activity-box', () => {
     await runAction(tools);
     expect(GistBox.prototype.update).toHaveBeenCalled();
     expect(GistBox.prototype.update.mock.calls[0][0]).toMatchSnapshot();
+  });
+
+  it('retries transient failures when fetching user activity', async () => {
+    process.env.ACTIVITY_BOX_RETRY_DELAY_MS = '0';
+
+    nock('https://api.github.com')
+      .get('/users/clippy/events/public?per_page=100')
+      .replyWithError('Premature close')
+      .get('/users/clippy/events/public?per_page=100')
+      .reply(200, events);
+
+    await runAction(tools);
+
+    expect(tools.exit.failure).not.toHaveBeenCalled();
+    expect(GistBox.prototype.update).toHaveBeenCalled();
+    expect(tools.log.debug).toHaveBeenCalledWith(
+      'Retrying activity fetch for clippy after transient error (1/3)',
+    );
   });
 
   it('handles failure to update the Gist', async () => {
