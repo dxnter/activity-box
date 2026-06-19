@@ -1,6 +1,7 @@
 {
   "name": "activity-box",
   "version": "1.0.0",
+  "type": "module",
   "description": "⚡️📌️ Update a gist to contain your recent activity",
   "author": "Jason Etcovitch <jasonetco@gmail.com>",
   "contributors": [
@@ -30,7 +31,6 @@
     "@eslint/compat": "^1.2.5",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "actions-toolkit": "^4.0.0",
     "dotenv": "^16.2.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
@@ -38,13 +38,11 @@
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^56.0.1",
-    "espree": "^10.3.0",
-    "gist-box": "^0.3.1"
+    "espree": "^10.3.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.0",
     "jest": "^29.0.0",
-    "nock": "^13.0.3",
     "prettier": "^3.2.5"
   },
   "jest": {

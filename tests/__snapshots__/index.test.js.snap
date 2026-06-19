@@ -1,25 +1,35 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`activity-box handles failure to update the Gist 1`] = `
+exports[`activity-box updates the Gist with fallback message if no events are found 1`] = `
 [
-  [
-    [Error: 404],
-  ],
+  "https://api.github.com/gists/456def",
+  {
+    "body": "{"files":{"activity.md":{"content":"No recent activity found."}}}",
+    "headers": {
+      "accept": "application/vnd.github+json",
+      "authorization": "Bearer 123abc",
+      "content-type": "application/json",
+      "user-agent": "activity-box",
+      "x-github-api-version": "2022-11-28",
+    },
+    "method": "PATCH",
+  },
 ]
 `;
 
-exports[`activity-box updates the Gist with fallback message if no events are found 1`] = `
-{
-  "content": "No recent activity found.",
-}
-`;
-
 exports[`activity-box updates the Gist with the expected string when events exist 1`] = `
-{
-  "content": "🚩 Opened issue #1 in clippy/take-over-github
-💬 Commented on #1 in clippy/take-over-github
-🟢 Merged PR #2 in clippy/take-over-github
-❌ Closed PR #3 in clippy/take-over-github
-🔀 Opened PR #3 in clippy/really-really-really-really-really...",
-}
+[
+  "https://api.github.com/gists/456def",
+  {
+    "body": "{"files":{"activity.md":{"content":"🚩 Opened issue #1 in clippy/take-over-github\\n💬 Commented on #1 in clippy/take-over-github\\n🟢 Merged PR #2 in clippy/take-over-github\\n❌ Closed PR #3 in clippy/take-over-github\\n🔀 Opened PR #3 in clippy/really-really-really-really-really..."}}}",
+    "headers": {
+      "accept": "application/vnd.github+json",
+      "authorization": "Bearer 123abc",
+      "content-type": "application/json",
+      "user-agent": "activity-box",
+      "x-github-api-version": "2022-11-28",
+    },
+    "method": "PATCH",
+  },
+]
 `;
